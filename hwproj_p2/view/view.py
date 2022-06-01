@@ -297,10 +297,10 @@ class Page:
             self.update_view(hw)
 
         def update_view(self, hw: HW):
-            deadadd_line_str = tm.strftime('%d.%m.%Y %H:%M', hw.deadadd_line)
+            deadline_str = tm.strftime('%d.%m.%Y %H:%M', hw.deadadd_line)
             self.view = (
                 f'<h3><a href="{self.__url}">{hw.name}</a></h3>\n'
-                f'<p><strong>Дедлайн:</strong> {deadadd_line_str}</p>\n'
+                f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
                 '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
 
@@ -311,11 +311,11 @@ class Page:
 
         def update_view(self, hw: HW):
             date_str     = tm.strftime('%d.%m.%Y %H:%M', hw.date)
-            deadadd_line_str = tm.strftime('%d.%m.%Y %H:%M', hw.deadadd_line)
+            deadline_str = tm.strftime('%d.%m.%Y %H:%M', hw.deadadd_line)
             self.view = (
                 f'<h2>{hw.name}</h2>\n<p><em>Опубликовано: {date_str}</em></p>\n'
                 f'<p style="width: 800px; word-wrap: break-word;">{hw.problem}</p>\n'
-                f'<p><strong>Дедлайн:</strong> {deadadd_line_str}</p>\n'
+                f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
                 '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
 
