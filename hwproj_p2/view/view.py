@@ -22,7 +22,7 @@ class View:
     '''
 
     def __init__(self):
-        self.__hws_teacher_cache = (
+        self.__hws_teacher_page = (
             Page("http://localhost:8888/teacher")
             .add_heading(1, "Все задания")
             .add_panel([
@@ -30,21 +30,21 @@ class View:
                 ("http://localhost:8888/teacher/results", "Успеваемость")])
             .add_line()
         )
-        self.__hws_student_cache = (
+        self.__hws_student_page = (
             Page("http://localhost:8888/student")
             .add_heading(1, "Все задания")
             .add_panel([("http://localhost:8888/student/results", "Успеваемость")])
             .add_line()
         )
-        self.__hw_student_cache = {}
-        self.__hw_teacher_cache = {}
-        self.__res_student_cache = (
+        self.__hw_student_pages = {}
+        self.__hw_teacher_pages = {}
+        self.__res_student_page = (
             Page("http://localhost:8888/student/results")
             .add_heading(1, "Успеваемость")
             .add_panel([("http://localhost:8888/student", "Задания")])
             .add_line()
         )
-        self.__res_teacher_cache = (
+        self.__res_teacher_page = (
             Page("http://localhost:8888/teacher/results")
             .add_heading(1, "Успеваемость")
             .add_panel([
@@ -52,17 +52,17 @@ class View:
                 ("http://localhost:8888/teacher", "Все задания")])
             .add_line()
         )
-        self.__new_hw_cache = (
+        self.__new_hw_page = (
             Page("http://localhost:8888/teacher/add")
             .add_heading(1, "Новое задание")
             .add_panel([
                 ("http://localhost:8888/teacher", "Все задания"),
                 ("http://localhost:8888/teacher/results", "Успеваемость")])
             .add_line()
-            .add_text_input("hw_name", "Название работы", 1)
-            .add_text_input("hw_problem", "Условие", 24)
-            .add_date_time_input("hw_start", "Начало", tm.localtime())
-            .add_date_time_input("hw_end", "Дедлайн", tm.localtime())
+            .add_text_input("hw_name", "Название работы", rows=1)
+            .add_text_input("hw_problem", "Условие", rows=24)
+            .add_date_time_input("hw_start", "Начало", min_date=tm.localtime())
+            .add_date_time_input("hw_end", "Дедлайн", min_date=tm.localtime())
             .add_button_post("Создать", ["hw_name", "hw_problem", "hw_start", "hw_end"])
         )
 
@@ -70,28 +70,29 @@ class View:
         '''
         Returns a web page with a list of homeworks.
         :param user: a type of an user who looks the page
-        :returns: html code of the web page
+        :returns: HTML code of the web page
         '''
 
         if user == UserType.STUDENT:
-            return repr(self.__hws_student_cache)
+            return repr(self.__hws_student_page)
         elif user == UserType.TEACHER:
-            return repr(self.__hws_teacher_cache)
+            return repr(self.__hws_teacher_page
+    )
 
     def get_task_page(self, hw_id: int, user: UserType) -> str:
         '''
         Returns a web page with a homework description.
         :param hw_id: an id of a homework
         :param user: a type of an user who looks the page
-        :returns: html code of the web page
+        :returns: HTML code of the web page
         :throws KeyError: if a web page of a homework with such id does not exist
         '''
 
         try:
             if user == UserType.STUDENT:
-                return repr(self.__hw_student_cache[hw_id])
+                return repr(self.__hw_student_pages[hw_id])
             elif user == UserType.TEACHER:
-                return repr(self.__hw_teacher_cache[hw_id])
+                return repr(self.__hw_teacher_pages[hw_id])
         except KeyError:
             raise KeyError(f'a web page of a homework with id {hw_id} does not exist') from None
 
@@ -99,21 +100,21 @@ class View:
         '''
         Returns a web page with a student progress.
         :param user: a type of an user who looks the page
-        :returns: html code of the web page
+        :returns: HTML code of the web page
         '''
 
         if user == UserType.STUDENT:
-            return repr(self.__res_student_cache)
+            return repr(self.__res_student_page)
         elif user == UserType.TEACHER:
-            return repr(self.__res_teacher_cache)
+            return repr(self.__res_teacher_page)
 
     def get_hw_creation_page(self) -> str:
         '''
         Returns a web page with a form creating a new homework.
-        :returns: html code of the web page
+        :returns: HTML code of the web page
         '''
 
-        return repr(self.__new_hw_cache)
+        return repr(self.__new_hw_page)
 
     def on_hw_created(self, hw: HW):
         '''
@@ -147,7 +148,7 @@ class Page:
     All such pages contain list of sections, each of the second ones can be updated by adding blocks at the end.
     You can only add blocks without removing, also you may update blocks with an info about homework.
     Supported blocks:
-        heading:     HTML tag <h*> where * in [1, 5]
+        heading:     HTML tag <h*> where * in [1, 6]
         panel:       HTML borderless table with one row that contains links to some pages
         line:        HTML tag <hr />
         break:       HTML tag <br>
@@ -179,7 +180,7 @@ class Page:
     def update(self, hw: HW):
         '''
         Updates view of all homeworks representations in the page.
-        :param hw: an updating hw
+        :param hw: an updating homework
         '''
 
         self.__cache = None
@@ -200,26 +201,56 @@ class Page:
         return self
 
     def add_heading(self, lvl: int, text: str) -> 'Page':
+        '''
+        Adds a new heading block to the selected section.
+        :param lvl: a number * in the <h*> tag
+        :param text: a text of the heading
+        :returns: self
+        '''
+
         self.__cache = None
         self.__body[self.__selected].append(self.__Heading(lvl, text))
         return self
 
     def add_panel(self, elems: List[Tuple[str, str]]) -> 'Page':
+        '''
+        Adds a new panel block to the selected section.
+        :param elems: a list of tuples (URL, text)
+        :returns: self
+        '''
+
         self.__cache = None
         self.__body[self.__selected].append(self.__Panel(elems))
         return self
 
     def add_line(self) -> 'Page':
+        '''
+        Adds a new line block to the selected section.
+        :returns: self
+        '''
+
         self.__cache = None
         self.__body[self.__selected].append(self.__Line())
         return self
 
     def add_break(self) -> 'Page':
+        '''
+        Adds a new break block to the selected section.
+        :returns: self
+        '''
+
         self.__cache = None
         self.__body[self.__selected].append(self.__Break())
         return self
 
     def add_hw_short(self, hw: HW, url: str) -> 'Page':
+        '''
+        Adds a new hw_short block to the selected section.
+        :param hw: a homework description to add
+        :param url: a link to a task page
+        :returns: self
+        '''
+
         self.__cache = None
 
         block = self.__HWShort(hw, url)
@@ -232,6 +263,12 @@ class Page:
         return self
 
     def add_hw_long(self, hw: HW) -> 'Page':
+        '''
+        Adds a new hw_long block to the selected section.
+        :param hw: a homework description to add
+        :returns: self
+        '''
+
         self.__cache = None
 
         block = self.__HWLong(hw)
@@ -244,23 +281,52 @@ class Page:
         return self
 
     def add_message(self, message: Message) -> 'Page':
+        '''
+        Adds a new message block to the selected section.
+        :param message: a message content to add
+        :returns: self
+        '''
+
         self.__cache = None
         self.__body[self.__selected].append(self.__Message(message))
         return self
 
     def add_text_input(self, name: str, desc: str, rows: int) -> 'Page':
+        '''
+        Adds a new text_input block to the selected section.
+        :param name: a name of HTML class that allows scripts to collect input data
+        :param desc: a description for the user
+        :param rows: a rows parameter of the HTML tag <textarea>
+        :returns: self
+        '''
+
         self.__cache = None
         self.__body[self.__selected].append(self.__TextInput(name, desc, rows))
         return self
 
     def add_date_time_input(self, name: str, desc: str, min_date: Optional[tm.struct_time] =None) -> 'Page':
+        '''
+        Adds a new date_time_input block to the selected section.
+        :param name: a name of HTML class that allows scripts to collect input data
+        :param desc: a description for the user
+        :param min_date: a bottom boundary of the input
+        :returns: self
+        '''
+
         self.__cache = None
         self.__body[self.__selected].append(self.__DateTimeInput(name, desc, min_date))
         return self
 
-    def add_button_post(self, name: str, elems: List[str]) -> 'Page':
+    def add_button_post(self, text: str, elems: List[str]) -> 'Page':
+        '''
+        Adds a new button_post block to the selected section.
+        :param text: a text in the button
+        :param elems: a list of names of the input blocks which input data will be sent on click
+        :returns: self
+        '''
+
         self.__cache = None
-        self.__body[self.__selected].append(self.__ButtonPOST(name, self.__url, elems))
+        self.__body[self.__selected].append(self.__ButtonPOST(text, self.__url, elems))
         return self
 
     class __Block:
@@ -364,7 +430,7 @@ class Page:
     class __ButtonPOST(__Block):
         __n_buttons = 0
 
-        def __init__(self, name: str, url: str, elems: List[str]):
+        def __init__(self, text: str, url: str, elems: List[str]):
             super().__init__()
             n = self.__n_buttons
             self.__n_buttons += 1
@@ -378,5 +444,5 @@ class Page:
                 '\t\t\txhr.setRequestHeader("Content-Type", "application/json");\n'
                 '\t\t\txhr.send(JSON.stringify({ ' + ', '.join(map(lambda el: f'"{el}": {el}', elems)) + ' }));\n'
                 '\t\t} else {\n\t\t\talert("Заполните все поля");\n\t\t}\n\t}\n'
-                f'</script>\n<button onclick="fun{n}()">{name}</button>\n'
+                f'</script>\n<button onclick="fun{n}()">{text}</button>\n'
             )

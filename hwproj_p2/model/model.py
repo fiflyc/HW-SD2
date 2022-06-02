@@ -69,7 +69,7 @@ class Message:
     '''
     A class that contains information about student's try or checker result.
     Properties:
-        time: time when message was send
+        time: time when message was sent
         url: url with a link to a student's solution
         text: a commentary
     '''
