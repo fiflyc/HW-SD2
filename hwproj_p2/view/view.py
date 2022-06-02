@@ -1,7 +1,7 @@
 import time as tm
 from enum import Enum
 from model import HW, Message
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 
 class UserType(Enum):
@@ -61,8 +61,8 @@ class View:
             .add_line()
             .add_text_input("hw_name", "Название работы", 1)
             .add_text_input("hw_problem", "Условие", 24)
-            # TODO: .add_date_time_input("hw_start", "Начало")
-            # TODO: .add_date_time_input("hw_end", "Дедлайн")
+            .add_date_time_input("hw_start", "Начало", tm.localtime())
+            .add_date_time_input("hw_end", "Дедлайн", tm.localtime())
             .add_button_post("Создать", ["hw_name", "hw_problem", "hw_start", "hw_end"])
         )
 
@@ -253,6 +253,11 @@ class Page:
         self.__body[self.__selected].append(self.__TextInput(name, desc, rows))
         return self
 
+    def add_date_time_input(self, name: str, desc: str, min_date: Optional[tm.struct_time] =None) -> 'Page':
+        self.__cache = None
+        self.__body[self.__selected].append(self.__DateTimeInput(name, desc, min_date))
+        return self
+
     def add_button_post(self, name: str, elems: List[str]) -> 'Page':
         self.__cache = None
         self.__body[self.__selected].append(self.__ButtonPOST(name, self.__url, elems))
@@ -340,6 +345,21 @@ class Page:
                 f'<p>{desc}:</p>\n'
                 f'<p><textarea rows="{rows}" cols="75" class="{name}" style="resize: vertical"></textarea></p>\n'
             )
+
+    class __DateTimeInput(__Block):
+        def __init__(self, name: str, desc: str, min_date: Optional[tm.struct_time]):
+            super().__init__()
+            if min_date is not None:
+                min_date_str = tm.strftime('%Y-%m-%dT%H:%M', min_date)
+                self.view = (
+                    f'<p><label for="{name}" style="padding-right: 20px;">{desc}:</label>'
+                    f'<input type="datetime-local" class="{name}" min="{min_date_str}"></p>'
+                )
+            else:
+                self.view = (
+                    f'<p><label for="{name}" style="padding-right: 20px;">{desc}:</label>'
+                    f'<input type="datetime-local" class="{name}"></p>'
+                )
 
     class __ButtonPOST(__Block):
         __n_buttons = 0
