@@ -140,7 +140,7 @@ class View:
             .select(1)
             .add_line()
             .add_text_input("m_url", "Ссылка на решение", rows=1)
-            .add_text_input("m_text", "Комментарий", rows=24)
+            .add_text_input("m_text", "Комментарий", rows=12)
             .add_button_post("Отправить", url_student, ["m_url", "m_text"])
             .select(0)
         )
@@ -428,8 +428,9 @@ class Page:
             date_str     = tm.strftime('%d.%m.%Y %H:%M', hw.date)
             deadline_str = tm.strftime('%d.%m.%Y %H:%M', hw.deadline)
             self.view = (
-                f'<h2>{hw.name}</h2>\n<p><em>Опубликовано: {date_str}</em></p>\n'
+                f'<h2>{hw.name}</h2>\n'
                 f'<p style="width: 800px; word-wrap: break-word;">{hw.problem}</p>\n'
+                f'<p><strong>Опубликовано:</strong> {date_str}</p>\n'
                 f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
                 '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
@@ -443,7 +444,7 @@ class Page:
                 url = '//' + message.url
             else:
                 url = message.url
-                
+
             self.view = (
                 '<table style="border-collapse: collapse; background-color: #d9d9d9;" border="0"><tbody>\n'
                 '\t<tr><td style="width: 100%;"><blockquote>\n'
