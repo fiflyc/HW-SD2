@@ -63,7 +63,7 @@ class View:
             .add_text_input("hw_problem", "Условие", rows=24)
             .add_date_time_input("hw_start", "Начало", min_date=tm.localtime())
             .add_date_time_input("hw_end", "Дедлайн", min_date=tm.localtime())
-            .add_button_post("Создать", ["hw_name", "hw_problem", "hw_start", "hw_end"])
+            .add_button_post("Создать", "http://localhost:8888/teacher", ["hw_name", "hw_problem", "hw_start", "hw_end"])
         )
 
     def get_homeworks_page(self, user: UserType) -> str:
@@ -122,7 +122,40 @@ class View:
         :param hw: a created homework
         '''
 
-        pass
+        url_student = f"http://localhost:8888/student/homework/{hw.id}"
+        url_teacher = f"http://localhost:8888/teacher/homework/{hw.id}"
+
+        self.__hws_student_page.add_hw_short(hw, url_student)
+        self.__hws_teacher_page.add_hw_short(hw, url_teacher)
+        self.__hw_student_pages[hw.id] = (
+            Page(url_student, sections=2)
+            .add_heading(1, "Сдать решение")
+            .add_panel([
+                ("http://localhost:8888/student", "Все задания"),
+                ("http://localhost:8888/student/results", "Успеваемость")])
+            .add_line()
+            .add_hw_long(hw)
+            .add_line()
+            .add_break()
+            .select(1)
+            .add_line()
+            .add_text_input("m_url", "Ссылка на решение", rows=1)
+            .add_text_input("m_text", "Комментарий", rows=24)
+            .add_button_post("Отправить", url_student, ["m_url", "m_text"])
+            .select(0)
+        )
+        self.__hw_teacher_pages[hw.id] = (
+            Page(url_teacher)
+            .add_heading(1, "Просмотр посылок")
+            .add_panel([
+                ("http://localhost:8888/teacher/add", "Новое задание"),
+                ("http://localhost:8888/teacher", "Все задания"),
+                ("http://localhost:8888/teacher/results", "Успеваемость")])
+            .add_line()
+            .add_hw_long(hw)
+            .add_line()
+            .add_break()
+        )
 
     def on_hw_updated(self, hw: HW):
         '''
@@ -130,16 +163,26 @@ class View:
         :param hw: an updated homework
         '''
 
-        pass
+        self.__hws_student_page.update(hw)
+        self.__hws_teacher_page.update(hw)
+        self.__res_student_page.update(hw)
+        self.__res_teacher_page.update(hw)
+        self.__hw_student_pages[hw.id].update(hw)
+        self.__hw_teacher_pages[hw.id].update(hw)
 
     def on_message_send(self, hw_id: int, message: Message):
         '''
         Updates homework web page that contains attempts messages.
         :param hw_id: an id of a homework with updated progress
         :param message: a new attempt message
+        :throws KeyError: if a homework with such id does not exist
         '''
 
-        pass
+        try:
+            self.__hw_student_pages[hw_id].add_message(message)
+            self.__hw_teacher_pages[hw_id].add_message(message)
+        except KeyError:
+            raise KeyError(f'a homework with id {hw_id} does not exist') from None
 
 
 class Page:
@@ -188,14 +231,14 @@ class Page:
             for b in self.__hws_blocks[hw.id]:
                 b.update_view(hw)
 
-    def section(self, section: int) -> 'Page':
+    def select(self, section: int) -> 'Page':
         '''
         Selects section for adding blocks at the end of it.
         :param section: an index of the section
         :raises IndexError: if an index of the section is out of range
         '''
 
-        if -self.__sections > section or self.__sections <= section:
+        if -len(self.__body) > section or len(self.__body) <= section:
             raise IndexError('section index out of range')
         self.__selected = section
         return self
@@ -317,16 +360,17 @@ class Page:
         self.__body[self.__selected].append(self.__DateTimeInput(name, desc, min_date))
         return self
 
-    def add_button_post(self, text: str, elems: List[str]) -> 'Page':
+    def add_button_post(self, text: str, url: str, elems: List[str]) -> 'Page':
         '''
         Adds a new button_post block to the selected section.
         :param text: a text in the button
+        :param url: a web page to redirect on click
         :param elems: a list of names of the input blocks which input data will be sent on click
         :returns: self
         '''
 
         self.__cache = None
-        self.__body[self.__selected].append(self.__ButtonPOST(text, self.__url, elems))
+        self.__body[self.__selected].append(self.__ButtonPOST(text, self.__url, url, elems))
         return self
 
     class __Block:
@@ -393,11 +437,17 @@ class Page:
     class __Message(__Block):
         def __init__(self, message: Message):
             super().__init__()
+
             time_str = tm.strftime('%d.%m.%Y %H:%M', message.time)
+            if not message.url.startswith('//'):
+                url = '//' + message.url
+            else:
+                url = message.url
+                
             self.view = (
                 '<table style="border-collapse: collapse; background-color: #d9d9d9;" border="0"><tbody>\n'
                 '\t<tr><td style="width: 100%;"><blockquote>\n'
-                f'\t\t<p><a href="{message.url}">{message.url}</a></p>\n'
+                f'\t\t<p><a href="{url}">{message.url}</a></p>\n'
                 f'\t\t<p style="width: 500px; word-wrap: break-word;">{message.text}</p>\n'
                 f'\t\t<p style="text-align: right;"><em>{time_str}</em></p>\n'
                 '\t</blockquote></td></tr>\n'
@@ -430,7 +480,7 @@ class Page:
     class __ButtonPOST(__Block):
         __n_buttons = 0
 
-        def __init__(self, text: str, url: str, elems: List[str]):
+        def __init__(self, text: str, url_post: str, url_redirect: str, elems: List[str]):
             super().__init__()
             n = self.__n_buttons
             self.__n_buttons += 1
@@ -440,9 +490,10 @@ class Page:
                 ''.join(map(lambda el: f'\t\tvar {el} = document.querySelector(".{el}").value;\n', elems)) + \
                 '\t\tif (' + ' && '.join(map(lambda el: f'{el}.length > 0', elems)) + ') {\n'
                 '\t\t\tlet xhr = new XMLHttpRequest();\n'
-                f'\t\t\txhr.open("POST", "{url}", true);\n'
+                f'\t\t\txhr.open("POST", "{url_post}", true);\n'
                 '\t\t\txhr.setRequestHeader("Content-Type", "application/json");\n'
                 '\t\t\txhr.send(JSON.stringify({ ' + ', '.join(map(lambda el: f'"{el}": {el}', elems)) + ' }));\n'
+                f'\t\t\twindow.location.href = "{url_redirect}";\n'
                 '\t\t} else {\n\t\t\talert("Заполните все поля");\n\t\t}\n\t}\n'
                 f'</script>\n<button onclick="fun{n}()">{text}</button>\n'
             )

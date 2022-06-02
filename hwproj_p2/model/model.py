@@ -158,3 +158,4 @@ class Model:
         '''
 
         self.__hws[hw.id] = hw
+        self.__dialogs[hw.id] = []

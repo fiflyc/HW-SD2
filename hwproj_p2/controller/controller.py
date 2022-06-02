@@ -12,13 +12,13 @@ class Controller:
         self.__model = model
         self.__view  = view
 
-    def send_solution(self, hw_id: int, *args, **kwargs):
+    def send_solution(self, hw_id: int, url: str, text: str):
         '''
         Sends a new message with passed parameters.
-        :param hw_id: an id of homework which dialog to update 
+        :param hw_id: an id of homework which dialog to update
         '''
 
-        message = Message(*args, **kwargs)
+        message = Message(tm.localtime(), url, text)
         self.__model.send_message(hw_id, message)
         self.__view.on_message_send(hw_id, message)
 
@@ -27,7 +27,7 @@ class Controller:
         Creates new homework with passed parameters.
         '''
 
-        hw = HW(name, *args, **kwargs)
+        hw = HW(*args, **kwargs)
         self.__model.add_hw(hw)
         self.__view.on_hw_created(hw)
 
