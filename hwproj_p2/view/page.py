@@ -322,7 +322,9 @@ class Page:
                 '<script type="text/javascript">\n' + \
                 f'\tvar {name} = null;\n\tvar {name}_loading = false;\n' + \
                 '\tfunction onloadf%d() {\n' % n + \
-                f'\t\t{name} = null;\n\t\t{name}_loading = true;\n' + \
+                f'\t\t{name} = null;\n' + \
+                f'\t\tif (!document.querySelector(".{name}").files[0])' + ' {\n\t\t\treturn;\n\t\t}\n' + \
+                '\t\t{name}_loading = true;\n' + \
                 '\t\tconst reader = new FileReader();\n'
                 f'\t\treader.readAsText(document.querySelector(".{name}").files[0]);\n'
                 '\t\treader.onload = () => {\n'
