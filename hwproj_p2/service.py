@@ -52,7 +52,7 @@ def add_homework_teacher():
             data['hw_problem'],
             tm.strptime(data['hw_start'], '%Y-%m-%dT%H:%M'),
             tm.strptime(data['hw_end'], '%Y-%m-%dT%H:%M'),
-            ''
+            data["hw_script"]
         )
         return view.get_homeworks_page(UserType.TEACHER)
 

@@ -63,7 +63,8 @@ class View:
             .add_text_input("hw_problem", "Условие", rows=24)
             .add_date_time_input("hw_start", "Начало", min_date=tm.localtime())
             .add_date_time_input("hw_end", "Дедлайн", min_date=tm.localtime())
-            .add_button_post("Создать", "http://localhost:8888/teacher", ["hw_name", "hw_problem", "hw_start", "hw_end"])
+            .add_file_input("hw_script", "Bash скрипт проверки", ["sh"])
+            .add_button_post("Создать", "http://localhost:8888/teacher", ["hw_name", "hw_problem", "hw_start", "hw_end"], ["hw_script"])
         )
 
     def get_homeworks_page(self, user: UserType) -> str:

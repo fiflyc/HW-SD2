@@ -17,7 +17,8 @@ class Page:
         hw_long:     HTML code of a long homework description (name, problem, date, deadline, mark)
         message:     HTML code of a message (a student's try or a checker output)
         text_input:  HTML tag <textarea>
-        button_post: HTML tag <button> with a script that sends selected input
+        file_input:  HTML tag <input type="file">
+        button_post: HTML tag <button> with a script that sends selected input as a JSON data
     To get HTML code of the page use repr function.
     '''
 
@@ -178,17 +179,31 @@ class Page:
         self.__body[self.__selected].append(self.__DateTimeInput(name, desc, min_date))
         return self
 
-    def add_button_post(self, text: str, url: str, elems: List[str]) -> 'Page':
+    def add_file_input(self, name: str, desc: str, types: List[str] =[]):
+        '''
+        Adds a new file_input block to the selected section.
+        :param name: a name of HTML class that allows scripts to collect input data
+        :param desc: a description for the user
+        :param types: a list of the acceptable file types, if it's empty it accepts all file types
+        :returns: self
+        '''
+
+        self.__cache = None
+        self.__body[self.__selected].append(self.__FileInput(name, desc, types))
+        return self
+
+    def add_button_post(self, text: str, url: str, elems: List[str], files: List[str] = []) -> 'Page':
         '''
         Adds a new button_post block to the selected section.
         :param text: a text in the button
         :param url: a web page to redirect on click
         :param elems: a list of names of the input blocks which input data will be sent on click
+        :param files: a list of names of the file_input blocks which data will be sent on click
         :returns: self
         '''
 
         self.__cache = None
-        self.__body[self.__selected].append(self.__ButtonPOST(text, self.__url, url, elems))
+        self.__body[self.__selected].append(self.__ButtonPOST(text, self.__url, url, elems, files))
         return self
 
     class __Block:
@@ -287,32 +302,70 @@ class Page:
             if min_date is not None:
                 min_date_str = tm.strftime('%Y-%m-%dT%H:%M', min_date)
                 self.view = (
-                    f'<p><label for="{name}" style="padding-right: 20px;">{desc}:</label>'
-                    f'<input type="datetime-local" class="{name}" min="{min_date_str}"></p>'
+                    f'<p><label for="{name}" style="padding-right: 20px;">{desc}:</label>\n'
+                    f'<input type="datetime-local" class="{name}" min="{min_date_str}"></p>\n'
                 )
             else:
                 self.view = (
-                    f'<p><label for="{name}" style="padding-right: 20px;">{desc}:</label>'
-                    f'<input type="datetime-local" class="{name}"></p>'
+                    f'<p><label for="{name}" style="padding-right: 20px;">{desc}:</label>\n'
+                    f'<input type="datetime-local" class="{name}"></p>\n'
+                )
+
+    class __FileInput(__Block):
+        __n_finputs = 0
+
+        def __init__(self, name: str, desc: str, types: List[str] =[]):
+            super().__init__()
+            n = self.__n_finputs
+            self.__n_finputs += 1
+            self.view = (
+                '<script type="text/javascript">\n' + \
+                f'\tvar {name} = null;\n\tvar {name}_loading = false;\n' + \
+                '\tfunction onloadf%d() {\n' % n + \
+                f'\t\t{name} = null;\n\t\t{name}_loading = true;\n' + \
+                '\t\tconst reader = new FileReader();\n'
+                f'\t\treader.readAsText(document.querySelector(".{name}").files[0]);\n'
+                '\t\treader.onload = () => {\n'
+                f'\t\t\t{name} = reader.result;\n\t\t\t{name}_loading = false;\n'
+                '\t\t};\n\t}\n</script>'
+            )
+            if not types:
+                self.view += (
+                    f'<p><label for="{name}" style="padding-right:20px;">{desc}:</label>\n'
+                    f'<input type="file" class="{name}" onchange="onloadf{n}()"></p>\n'
+                )
+            else:
+                self.view += (
+                    f'<p><label for="{name}" style="padding-right:20px;">{desc}:</label>\n'
+                    f'<input type="file" class="{name}" onchange="onloadf{n}()" accept="' + ','.join(map(lambda t: t if t.startswith('.') else f'.{t}', types)) + '"></p>\n'
                 )
 
     class __ButtonPOST(__Block):
         __n_buttons = 0
 
-        def __init__(self, text: str, url_post: str, url_redirect: str, elems: List[str]):
+        def __init__(self, text: str, url_post: str, url_redirect: str, elems: List[str], files: List[str]):
             super().__init__()
             n = self.__n_buttons
             self.__n_buttons += 1
             self.view = (
                 '<script type="text/javascript">\n' + \
-                '\tfunction fun%d() {\n' % n + \
-                ''.join(map(lambda el: f'\t\tvar {el} = document.querySelector(".{el}").value;\n', elems)) + \
+                '\tfunction send%d() {\n' % n + \
+                ''.join(map(lambda el: f'\t\tvar {el} = document.querySelector(".{el}").value;\n', elems))
+            )
+            if files:
+                self.view += (
+                    '\t\tif (' + ' || '.join(map(lambda fl: f'{fl} == null', files)) + ') {\n'
+                    '\t\t\tif (' + ' || '.join(map(lambda fl: f'{fl}_loading', files)) + ') {\n\t\t\t\talert("Файл загружается");\n\t\t\t\treturn;\n'
+                    '\t\t\t} else {\n\t\t\t\talert("Файл не выбран");\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n'
+                )
+            self.view += (
                 '\t\tif (' + ' && '.join(map(lambda el: f'{el}.length > 0', elems)) + ') {\n'
                 '\t\t\tlet xhr = new XMLHttpRequest();\n'
                 f'\t\t\txhr.open("POST", "{url_post}", true);\n'
                 '\t\t\txhr.setRequestHeader("Content-Type", "application/json");\n'
-                '\t\t\txhr.send(JSON.stringify({ ' + ', '.join(map(lambda el: f'"{el}": {el}', elems)) + ' }));\n'
+                '\t\t\txhr.send(JSON.stringify({ ' + ', '.join(map(lambda el: f'"{el}": {el}', elems)) + ', ' +
+                ', '.join(map(lambda fl: f'"{fl}": {fl}', files)) + ' }));\n'
                 f'\t\t\twindow.location.href = "{url_redirect}";\n'
                 '\t\t} else {\n\t\t\talert("Заполните все поля");\n\t\t}\n\t}\n'
-                f'</script>\n<button onclick="fun{n}()">{text}</button>\n'
+                f'</script>\n<button onclick="send{n}()">{text}</button>\n'
             )
