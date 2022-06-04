@@ -324,7 +324,7 @@ class Page:
                 '\tfunction onloadf%d() {\n' % n + \
                 f'\t\t{name} = null;\n' + \
                 f'\t\tif (!document.querySelector(".{name}").files[0])' + ' {\n\t\t\treturn;\n\t\t}\n' + \
-                '\t\t{name}_loading = true;\n' + \
+                f'\t\t{name}_loading = true;\n' + \
                 '\t\tconst reader = new FileReader();\n'
                 f'\t\treader.readAsText(document.querySelector(".{name}").files[0]);\n'
                 '\t\treader.onload = () => {\n'
