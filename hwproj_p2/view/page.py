@@ -262,7 +262,7 @@ class Page:
             deadline_str = tm.strftime('%d.%m.%Y %H:%M', hw.deadline)
             self.view = (
                 f'<h2>{hw.name}</h2>\n'
-                f'<p style="width: 800px; word-wrap: break-word;">{hw.problem}</p>\n'
+                f'<p style="width: 800px; word-wrap: break-word; white-space: pre-line;">{hw.problem}</p>\n'
                 f'<p><strong>Опубликовано:</strong> {date_str}</p>\n'
                 f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
                 '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
