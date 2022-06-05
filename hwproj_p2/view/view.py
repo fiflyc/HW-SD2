@@ -29,12 +29,14 @@ class View:
                 ("http://localhost:8888/teacher/add", "Новое задание"),
                 ("http://localhost:8888/teacher/results", "Успеваемость")])
             .add_line()
+            .add_hws_list()
         )
         self.__hws_student_page = (
             Page("http://localhost:8888/student")
             .add_heading(1, "Все задания")
             .add_panel([("http://localhost:8888/student/results", "Успеваемость")])
             .add_line()
+            .add_hws_list()
         )
         self.__hw_student_pages = {}
         self.__hw_teacher_pages = {}
@@ -43,6 +45,7 @@ class View:
             .add_heading(1, "Успеваемость")
             .add_panel([("http://localhost:8888/student", "Задания")])
             .add_line()
+            .add_hws_list()
         )
         self.__res_teacher_page = (
             Page("http://localhost:8888/teacher/results")
@@ -51,6 +54,7 @@ class View:
                 ("http://localhost:8888/teacher/add", "Новое задание"),
                 ("http://localhost:8888/teacher", "Все задания")])
             .add_line()
+            .add_hws_list()
         )
         self.__new_hw_page = (
             Page("http://localhost:8888/teacher/add")
@@ -126,10 +130,10 @@ class View:
         url_student = f"http://localhost:8888/student/homework/{hw.id}"
         url_teacher = f"http://localhost:8888/teacher/homework/{hw.id}"
 
-        self.__hws_student_page.add_hw_short(hw, url_student)
-        self.__hws_teacher_page.add_hw_short(hw, url_teacher)
+        self.__hws_student_page.insert_to(0, -hw.id, hw, url_student)
+        self.__hws_teacher_page.insert_to(0, -hw.id, hw, url_teacher)
         self.__hw_student_pages[hw.id] = (
-            Page(url_student, sections=2)
+            Page(url_student)
             .add_heading(1, "Сдать решение")
             .add_panel([
                 ("http://localhost:8888/student", "Все задания"),
@@ -138,12 +142,11 @@ class View:
             .add_hw_long(hw)
             .add_line()
             .add_break()
-            .select(1)
+            .add_dialog()
             .add_line()
             .add_text_input("m_url", "Ссылка на решение", rows=1)
             .add_text_input("m_text", "Комментарий", rows=12)
             .add_button_post("Отправить", url_student, ["m_url", "m_text"])
-            .select(0)
         )
         self.__hw_teacher_pages[hw.id] = (
             Page(url_teacher)
@@ -156,6 +159,7 @@ class View:
             .add_hw_long(hw)
             .add_line()
             .add_break()
+            .add_dialog()
         )
 
     def on_hw_updated(self, hw: HW):
@@ -180,7 +184,7 @@ class View:
         '''
 
         try:
-            self.__hw_student_pages[hw_id].add_message(message)
-            self.__hw_teacher_pages[hw_id].add_message(message)
+            self.__hw_student_pages[hw_id].insert_to(0, message.time, message)
+            self.__hw_teacher_pages[hw_id].insert_to(0, message.time, message)
         except KeyError:
             raise KeyError(f'a homework with id {hw_id} does not exist') from None

@@ -1,13 +1,14 @@
 import time as tm
 from model import HW, Message
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Dict, Optional, Union, Any
 
 
 class Page:
     '''
     A smart constructor of web pages.
-    All such pages contain list of sections, each of the second ones can be updated by adding blocks at the end.
-    You can only add blocks without removing, also you may update blocks with an info about homework.
+    All such pages contain list of blocks, which can be updated by adding those at the end.
+    For lists of blocks which order may change use containers.  
+    You can only add blocks without removing and update containers, also you may update all blocks with an info about homework.
     Supported blocks:
         heading:     HTML tag <h*> where * in [1, 6]
         panel:       HTML borderless table with one row that contains links to some pages
@@ -19,25 +20,31 @@ class Page:
         text_input:  HTML tag <textarea>
         file_input:  HTML tag <input type="file">
         button_post: HTML tag <button> with a script that sends selected input as a JSON data
+    Supported containers:
+        hws_list: HTML code of a list of hw_short blocks sorted by passed key
+        dialog:   HTML code of a list of message blocks sorted by passed key
     To get HTML code of the page use repr function.
     '''
 
-    def __init__(self, url: str, sections: int =1):
+    def __init__(self, url: str):
         '''
         :param url: an URL of the page
-        :param sections: a number of sections 
         '''
 
         self.__url = url
+        self.__body = []
+        self.__containers = []
         self.__hws_blocks = {}
-        self.__body = [[] for _ in range(sections)]
-        self.__selected = 0
         self.__cache = None
 
     def __repr__(self):
         if self.__cache is None:
-            self.__cache = '\n'.join(map(lambda s: '\n'.join(map(lambda b: repr(b), s)), self.__body))
+            self.__cache = '\n'.join(map(lambda b: repr(b), self.__body))
         return self.__cache
+
+    @property
+    def n_containers(self):
+        return len(self.__containers)
 
     def update(self, hw: HW):
         '''
@@ -50,151 +57,136 @@ class Page:
             for b in self.__hws_blocks[hw.id]:
                 b.update_view(hw)
 
-    def select(self, section: int) -> 'Page':
+    def insert_to(self, index: int, key: Any, obj: Union[HW, Message], *args, **kwargs):
         '''
-        Selects section for adding blocks at the end of it.
-        :param section: an index of the section
-        :raises IndexError: if an index of the section is out of range
+        Inserts a block into an existing container. 
+        :param index: an index of the container
+        :param key: a key of the new block
+        :param obj: a object which representation block will be added
+        :raises IndexError: if an index of the container is out of range
         '''
 
-        if -len(self.__body) > section or len(self.__body) <= section:
-            raise IndexError('section index out of range')
-        self.__selected = section
+        if -len(self.__containers) > index or len(self.__containers) <= index:
+            raise IndexError('container index is out of range')
+        self.__cache = None
+        self.__containers[index].insert(key, obj, *args, **kwargs)
+
+    def __add_block(self, block: 'Page._Block') -> 'Page':
+        self.__cache = None
+        self.__body.append(block)
         return self
 
     def add_heading(self, lvl: int, text: str) -> 'Page':
         '''
-        Adds a new heading block to the selected section.
+        Adds a new heading block to the end of the page.
         :param lvl: a number * in the <h*> tag
         :param text: a text of the heading
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__Heading(lvl, text))
-        return self
+        return self.__add_block(self._Heading(lvl, text))
 
     def add_panel(self, elems: List[Tuple[str, str]]) -> 'Page':
         '''
-        Adds a new panel block to the selected section.
+        Adds a new panel block to the end of the page.
         :param elems: a list of tuples (URL, text)
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__Panel(elems))
-        return self
+        return self.__add_block(self._Panel(elems))
 
     def add_line(self) -> 'Page':
         '''
-        Adds a new line block to the selected section.
+        Adds a new line block to the end of the page.
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__Line())
-        return self
+        return self.__add_block(self._Line())
 
     def add_break(self) -> 'Page':
         '''
-        Adds a new break block to the selected section.
+        Adds a new break block to the end of the page.
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__Break())
-        return self
+        return self.__add_block(self._Break())
 
     def add_hw_short(self, hw: HW, url: str) -> 'Page':
         '''
-        Adds a new hw_short block to the selected section.
+        Adds a new hw_short block to the end of the page.
         :param hw: a homework description to add
         :param url: a link to a task page
         :returns: self
         '''
 
-        self.__cache = None
-
-        block = self.__HWShort(hw, url)
-        self.__body[self.__selected].append(block)
+        block = self._HWShort(hw, url)
         if hw.id not in self.__hws_blocks:
             self.__hws_blocks[hw.id] = [block]
         else:
             self.__hws_blocks[hw.id].append(block)
 
-        return self
+        return self.__add_block(block)
 
     def add_hw_long(self, hw: HW) -> 'Page':
         '''
-        Adds a new hw_long block to the selected section.
+        Adds a new hw_long block to the end of the page.
         :param hw: a homework description to add
         :returns: self
         '''
 
-        self.__cache = None
-
-        block = self.__HWLong(hw)
-        self.__body[self.__selected].append(block)
+        block = self._HWLong(hw)
         if hw.id not in self.__hws_blocks:
             self.__hws_blocks[hw.id] = [block]
         else:
             self.__hws_blocks[hw.id].append(block)
 
-        return self
+        return self.__add_block(block)
 
     def add_message(self, message: Message) -> 'Page':
         '''
-        Adds a new message block to the selected section.
+        Adds a new message block to the end of the page.
         :param message: a message content to add
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__Message(message))
-        return self
+        return self.__add_block(self._Message(message))
 
     def add_text_input(self, name: str, desc: str, rows: int) -> 'Page':
         '''
-        Adds a new text_input block to the selected section.
+        Adds a new text_input block to the end of the page.
         :param name: a name of HTML class that allows scripts to collect input data
         :param desc: a description for the user
         :param rows: a rows parameter of the HTML tag <textarea>
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__TextInput(name, desc, rows))
-        return self
+        return self.__add_block(self._TextInput(name, desc, rows))
 
     def add_date_time_input(self, name: str, desc: str, min_date: Optional[tm.struct_time] =None) -> 'Page':
         '''
-        Adds a new date_time_input block to the selected section.
+        Adds a new date_time_input block to the end of the page.
         :param name: a name of HTML class that allows scripts to collect input data
         :param desc: a description for the user
         :param min_date: a bottom boundary of the input
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__DateTimeInput(name, desc, min_date))
-        return self
+        return self.__add_block(self._DateTimeInput(name, desc, min_date))
 
     def add_file_input(self, name: str, desc: str, types: List[str] =[]):
         '''
-        Adds a new file_input block to the selected section.
+        Adds a new file_input block to the end of the page.
         :param name: a name of HTML class that allows scripts to collect input data
         :param desc: a description for the user
         :param types: a list of the acceptable file types, if it's empty it accepts all file types
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__FileInput(name, desc, types))
-        return self
+        return self.__add_block(self._FileInput(name, desc, types))
 
     def add_button_post(self, text: str, url: str, elems: List[str], files: List[str] = []) -> 'Page':
         '''
-        Adds a new button_post block to the selected section.
+        Adds a new button_post block to the end of the page.
         :param text: a text in the button
         :param url: a web page to redirect on click
         :param elems: a list of names of the input blocks which input data will be sent on click
@@ -202,33 +194,49 @@ class Page:
         :returns: self
         '''
 
-        self.__cache = None
-        self.__body[self.__selected].append(self.__ButtonPOST(text, self.__url, url, elems, files))
-        return self
+        return self.__add_block(self._ButtonPOST(text, self.__url, url, elems, files))
 
-    class __Block:
+    def add_hws_list(self) -> 'Page':
+        '''
+        Adds a new hws_list container to the end of the page.
+        '''
+
+        container = self._HWsList(self.__hws_blocks)
+        self.__containers.append(container)
+        return self.__add_block(container)
+
+    def add_dialog(self) -> 'Page':
+        '''
+        Adds a new dialog container to the end of the page.
+        '''
+
+        container = self._Dialog()
+        self.__containers.append(container)
+        return self.__add_block(container)
+
+    class _Block:
         def __init__(self):
             self.view = ''
 
         def __repr__(self):
             return self.view
 
-    class __Line(__Block):
+    class _Line(_Block):
         def __init__(self):
             super().__init__()
             self.view = '<hr />\n'
 
-    class __Break(__Block):
+    class _Break(_Block):
         def __init__(self):
             super().__init__()
             self.view = '<br>\n'
 
-    class __Heading(__Block):
+    class _Heading(_Block):
         def __init__(self, lvl: int, text: str):
             super().__init__()
             self.view = f'<h{lvl}>{text}</h{lvl}>\n'
 
-    class __Panel(__Block):
+    class _Panel(_Block):
         def __init__(self, elems: List[Tuple[str, str]]):
             super().__init__()
             sz = 100 // len(elems)
@@ -238,7 +246,7 @@ class Page:
                 '\t</tr>\n</tbody></table>\n'
             )
 
-    class __HWShort(__Block):
+    class _HWShort(_Block):
         def __init__(self, hw: HW, url: str):
             super().__init__()
             self.__url = url
@@ -252,7 +260,7 @@ class Page:
                 '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
 
-    class __HWLong(__Block):
+    class _HWLong(_Block):
         def __init__(self, hw: HW):
             super().__init__()
             self.update_view(hw)
@@ -268,7 +276,7 @@ class Page:
                 '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
 
-    class __Message(__Block):
+    class _Message(_Block):
         def __init__(self, message: Message):
             super().__init__()
 
@@ -285,10 +293,10 @@ class Page:
                 f'\t\t<p style="width: 500px; word-wrap: break-word;">{message.text}</p>\n'
                 f'\t\t<p style="text-align: right;"><em>{time_str}</em></p>\n'
                 '\t</blockquote></td></tr>\n'
-                '</tbody></table>\n<br>\n'
+                '</tbody></table>\n'
             )
 
-    class __TextInput(__Block):
+    class _TextInput(_Block):
         def __init__(self, name: str, desc: str, rows: int):
             super().__init__()
             self.view = (
@@ -296,7 +304,7 @@ class Page:
                 f'<p><textarea rows="{rows}" cols="75" class="{name}" style="resize: vertical"></textarea></p>\n'
             )
 
-    class __DateTimeInput(__Block):
+    class _DateTimeInput(_Block):
         def __init__(self, name: str, desc: str, min_date: Optional[tm.struct_time]):
             super().__init__()
             if min_date is not None:
@@ -311,7 +319,7 @@ class Page:
                     f'<input type="datetime-local" class="{name}"></p>\n'
                 )
 
-    class __FileInput(__Block):
+    class _FileInput(_Block):
         __n_finputs = 0
 
         def __init__(self, name: str, desc: str, types: List[str] =[]):
@@ -342,7 +350,7 @@ class Page:
                     f'<input type="file" class="{name}" onchange="onloadf{n}()" accept="' + ','.join(map(lambda t: t if t.startswith('.') else f'.{t}', types)) + '"></p>\n'
                 )
 
-    class __ButtonPOST(__Block):
+    class _ButtonPOST(_Block):
         __n_buttons = 0
 
         def __init__(self, text: str, url_post: str, url_redirect: str, elems: List[str], files: List[str]):
@@ -371,3 +379,36 @@ class Page:
                 '\t\t} else {\n\t\t\talert("Заполните все поля");\n\t\t}\n\t}\n'
                 f'</script>\n<button onclick="send{n}()">{text}</button>\n'
             )
+
+    class _Container(_Block):
+        def __init__(self, separator: str):
+            super().__init__()
+            self.__sep = separator
+            self.__blocks = {}
+
+        def insert_block(self, key: Any, block: 'Page._Block'):
+            if key in self.__blocks:
+                self.__blocks[key].append(block)
+            else:
+                self.__blocks[key] = [block]
+            self.view = self.__sep.join([self.__sep.join(map(lambda b: repr(b), bs)) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0])])
+
+    class _HWsList(_Container):
+        def __init__(self, hws_blocks: Dict[int, List['Page._Block']]):
+            super().__init__('<hr />\n')
+            self.__hws_blocks = hws_blocks
+
+        def insert(self, key: Any, hw: HW, url: str):
+            block = Page._HWShort(hw, url)
+            self.insert_block(key, block)
+            if hw.id not in self.__hws_blocks:
+                self.__hws_blocks[hw.id] = [block]
+            else:
+                self.__hws_blocks[hw.id].append(block)
+
+    class _Dialog(_Container):
+        def __init__(self):
+            super().__init__('<br>\n')
+
+        def insert(self, key: Any, message: Message):
+            self.insert_block(key, Page._Message(message))
