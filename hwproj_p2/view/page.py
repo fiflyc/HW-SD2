@@ -290,7 +290,7 @@ class Page:
                 '<table style="border-collapse: collapse; background-color: #d9d9d9;" border="0"><tbody>\n'
                 '\t<tr><td style="width: 100%;"><blockquote>\n'
                 f'\t\t<p><a href="{url}">{message.url}</a></p>\n'
-                f'\t\t<p style="width: 500px; word-wrap: break-word;">{message.text}</p>\n'
+                f'\t\t<p style="width: 500px; word-wrap: break-word; white-space: pre-line;">{message.text}</p>\n'
                 f'\t\t<p style="text-align: right;"><em>{time_str}</em></p>\n'
                 '\t</blockquote></td></tr>\n'
                 '</tbody></table>\n'

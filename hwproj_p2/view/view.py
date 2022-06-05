@@ -143,6 +143,7 @@ class View:
             .add_line()
             .add_break()
             .add_dialog()
+            .add_break()
             .add_line()
             .add_text_input("m_url", "Ссылка на решение", rows=1)
             .add_text_input("m_text", "Комментарий", rows=12)
@@ -160,6 +161,7 @@ class View:
             .add_line()
             .add_break()
             .add_dialog()
+            .add_break()
         )
 
     def on_hw_updated(self, hw: HW):
