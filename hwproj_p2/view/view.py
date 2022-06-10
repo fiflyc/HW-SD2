@@ -79,6 +79,7 @@ class View:
         '''
 
         if user == UserType.STUDENT:
+            self.__hws_student_page.filter_container(0, 'date', tm.localtime())
             return repr(self.__hws_student_page)
         elif user == UserType.TEACHER:
             return repr(self.__hws_teacher_page
@@ -130,8 +131,8 @@ class View:
         url_student = f"http://localhost:8888/student/homework/{hw.id}"
         url_teacher = f"http://localhost:8888/teacher/homework/{hw.id}"
 
-        self.__hws_student_page.insert_to(0, -hw.id, hw, url_student)
-        self.__hws_teacher_page.insert_to(0, -hw.id, hw, url_teacher)
+        self.__hws_student_page.insert_to(0, hw.deadline, hw, url_student)
+        self.__hws_teacher_page.insert_to(0, hw.deadline, hw, url_teacher)
         self.__hw_student_pages[hw.id] = (
             Page(url_student)
             .add_heading(1, "Сдать решение")

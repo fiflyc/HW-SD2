@@ -71,6 +71,20 @@ class Page:
         self.__cache = None
         self.__containers[index].insert(key, obj, *args, **kwargs)
 
+    def filter_container(self, index: int, filt_attr: str, filt_val: Any):
+        '''
+        Filters blocks in a container by a attribute value. Use None values to remove filter.
+        :param index: an index of the container
+        :param filt_attr: the name of the attribute of an object (like HW or Message) what is represented by a block
+        :param filt_val: all blocks with attribute above this value will be ignored
+        :raises IndexError: if an index of the container is out of range
+        '''
+
+        if -len(self.__containers) > index or len(self.__containers) <= index:
+            raise IndexError('container index is out of range')
+        self.__cache = None
+        self.__containers[index].set_filter(filt_attr, filt_val)
+
     def __add_block(self, block: 'Page._Block') -> 'Page':
         self.__cache = None
         self.__body.append(block)
@@ -215,7 +229,8 @@ class Page:
         return self.__add_block(container)
 
     class _Block:
-        def __init__(self):
+        def __init__(self, obj: Any =None):
+            self.obj = obj 
             self.view = ''
 
         def __repr__(self):
@@ -248,7 +263,7 @@ class Page:
 
     class _HWShort(_Block):
         def __init__(self, hw: HW, url: str):
-            super().__init__()
+            super().__init__(hw)
             self.__url = url
             self.update_view(hw)
 
@@ -262,7 +277,7 @@ class Page:
 
     class _HWLong(_Block):
         def __init__(self, hw: HW):
-            super().__init__()
+            super().__init__(hw)
             self.update_view(hw)
 
         def update_view(self, hw: HW):
@@ -278,7 +293,7 @@ class Page:
 
     class _Message(_Block):
         def __init__(self, message: Message):
-            super().__init__()
+            super().__init__(message)
 
             time_str = tm.strftime('%d.%m.%Y %H:%M', message.time)
             if not message.url.startswith('//'):
@@ -384,14 +399,27 @@ class Page:
         def __init__(self, separator: str):
             super().__init__()
             self.__sep = separator
+            self.__filt_by = None
+            self.__filt_val = None
             self.__blocks = {}
+
+        def set_filter(self, filt_attr: str, filt_val: Any):
+            self.__filt_attr = filt_attr
+            self.__filt_val = filt_val
+            self.__update_view()
 
         def insert_block(self, key: Any, block: 'Page._Block'):
             if key in self.__blocks:
                 self.__blocks[key].append(block)
             else:
                 self.__blocks[key] = [block]
-            self.view = self.__sep.join([self.__sep.join(map(lambda b: repr(b), bs)) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0])])
+            self.__update_view()
+
+        def __update_view(self):
+            if self.__filt_val is None:
+                self.view = self.__sep.join([self.__sep.join(map(lambda b: repr(b), bs)) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0])])
+            else:
+                self.view = self.__sep.join(filter(None, [self.__sep.join(filter(None, map(lambda b: repr(b) if getattr(b.obj, self.__filt_attr) < self.__filt_val else '', bs))) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0])]))
 
     class _HWsList(_Container):
         def __init__(self, hws_blocks: Dict[int, List['Page._Block']]):

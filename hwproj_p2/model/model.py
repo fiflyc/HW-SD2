@@ -46,7 +46,7 @@ class HW:
 
     @property
     def date(self):
-        return self.__deadline
+        return self.__date
 
     @property
     def deadline(self):
