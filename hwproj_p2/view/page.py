@@ -272,9 +272,9 @@ class Page:
             self.view = (
                 f'<h3><a href="{self.__url}">{hw.name}</a></h3>\n'
                 f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
-                '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
-
+            self.view += '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
+            
     class _HWLong(_Block):
         def __init__(self, hw: HW):
             super().__init__(hw)
@@ -288,8 +288,8 @@ class Page:
                 f'<p style="width: 800px; word-wrap: break-word; white-space: pre-line;">{hw.problem}</p>\n'
                 f'<p><strong>Опубликовано:</strong> {date_str}</p>\n'
                 f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
-                '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
+            self.view += '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
 
     class _Message(_Block):
         def __init__(self, message: Message):
