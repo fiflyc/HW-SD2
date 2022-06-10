@@ -39,4 +39,5 @@ class Controller:
         :throws KeyError: if a homework with such id does not exist
         '''
 
-        self.__model.set_mark(hw_id, mark)
+        hw = self.__model.set_mark(hw_id, mark)
+        self.__view.on_mark_updated(hw, tm.localtime())

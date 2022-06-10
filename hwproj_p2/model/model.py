@@ -120,11 +120,13 @@ class Model:
         Sets mark to a homework.
         :param hw_id: an id of a homework
         :param mark: a mark
+        :returns: an updated homework
         :throws KeyError: if a homework with such id does not exist
         '''
         
         try:
             self.__hws[hw_id].mark = mark
+            return self.__hws[hw_id]
         except KeyError:
             raise KeyError(f'a homework with id {hw_id} does not exist') from None
 

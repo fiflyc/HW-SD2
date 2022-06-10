@@ -14,6 +14,7 @@ class Page:
         panel:       HTML borderless table with one row that contains links to some pages
         line:        HTML tag <hr />
         break:       HTML tag <br>
+        hw_res:      HTML code of the student's attempt result
         hw_short:    HTML code of a short homework description (name, deadline, mark)
         hw_long:     HTML code of a long homework description (name, problem, date, deadline, mark)
         message:     HTML code of a message (a student's try or a checker output)
@@ -21,8 +22,9 @@ class Page:
         file_input:  HTML tag <input type="file">
         button_post: HTML tag <button> with a script that sends selected input as a JSON data
     Supported containers:
-        hws_list: HTML code of a list of hw_short blocks sorted by passed key
-        dialog:   HTML code of a list of message blocks sorted by passed key
+        hws_list: HTML code of a list of hw_short blocks sorted by a passed key
+        dialog:   HTML code of a list of message blocks sorted by a passed key
+        results:  HTML code of a list of hw_res blocks sorted by a passed key
     To get HTML code of the page use repr function.
     '''
 
@@ -70,6 +72,9 @@ class Page:
             raise IndexError('container index is out of range')
         self.__cache = None
         self.__containers[index].insert(key, obj, *args, **kwargs)
+
+        if type(self.__containers[index]).__name__ == '_HWsList':
+            self.__hws_blocks[obj.id].append(self.__containers[index])
 
     def filter_container(self, index: int, filt_attr: str, filt_val: Any):
         '''
@@ -124,6 +129,17 @@ class Page:
         '''
 
         return self.__add_block(self._Break())
+
+    def add_hw_res(self, hw: HW, url: str, time: tm.struct_time) -> 'Page':
+        '''
+        Adds a new hw_res block to the end of the page.
+        :param hw: a homework description to add
+        :param url: a link to a task page
+        :param time: the last time when the result was updated
+        :returns: self
+        '''
+
+        return self.__add_block(self._HWRes(hw, url, time))
 
     def add_hw_short(self, hw: HW, url: str) -> 'Page':
         '''
@@ -210,23 +226,36 @@ class Page:
 
         return self.__add_block(self._ButtonPOST(text, self.__url, url, elems, files))
 
-    def add_hws_list(self) -> 'Page':
+    def __add_container(self, container: 'Page._Container') -> 'Page':
+        self.__containers.append(container)
+        return self.__add_block(container)
+
+    def add_hws_list(self, reverse: bool =False) -> 'Page':
         '''
         Adds a new hws_list container to the end of the page.
+        :param reverse: if true then new blocks will be inserted to the top of the container
+        :returns: self
         '''
 
-        container = self._HWsList(self.__hws_blocks)
-        self.__containers.append(container)
-        return self.__add_block(container)
+        return self.__add_container(self._HWsList(self.__hws_blocks, reverse))
 
-    def add_dialog(self) -> 'Page':
+    def add_dialog(self, reverse: bool =False) -> 'Page':
         '''
         Adds a new dialog container to the end of the page.
+        :param reverse: if true then new blocks will be inserted to the top of the container
+        :returns: self
         '''
 
-        container = self._Dialog()
-        self.__containers.append(container)
-        return self.__add_block(container)
+        return self.__add_container(self._Dialog(reverse))
+
+    def add_results(self, reverse: bool =False) -> 'Page':
+        '''
+        Adds a new results container to the end of the page.
+        :param reverse: if true then new blocks will be inserted to the top of the container
+        :returns: self
+        '''
+
+        return self.__add_container(self._Results(reverse))
 
     class _Block:
         def __init__(self, obj: Any =None):
@@ -259,6 +288,16 @@ class Page:
                 '<table style="border-collapse: collapse; width: 100%; max-width: 600px;" border="0"><tbody>\n\t<tr>\n' + \
                 ''.join(map(lambda el: f'\t\t<td style="width: {sz}%;"><a href="{el[0]}">{el[1]}</a></td>\n', elems)) +
                 '\t</tr>\n</tbody></table>\n'
+            )
+
+    class _HWRes(_Block):
+        def __init__(self, hw: HW, url: str, time: tm.struct_time):
+            super().__init__(hw)
+            time_str = tm.strftime('%d.%m.%Y %H:%M', time)
+            self.view = (
+                f'<h3><a href="{url}">{hw.name}</a></h3>\n'
+                f'<p><strong>Время проверки:</strong> {time_str}</p>\n'
+                f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             )
 
     class _HWShort(_Block):
@@ -396,9 +435,10 @@ class Page:
             )
 
     class _Container(_Block):
-        def __init__(self, separator: str):
+        def __init__(self, separator: str, reverse=False):
             super().__init__()
             self.__sep = separator
+            self.__reverse = reverse
             self.__filt_by = None
             self.__filt_val = None
             self.__blocks = {}
@@ -406,24 +446,24 @@ class Page:
         def set_filter(self, filt_attr: str, filt_val: Any):
             self.__filt_attr = filt_attr
             self.__filt_val = filt_val
-            self.__update_view()
+            self.update_view()
 
         def insert_block(self, key: Any, block: 'Page._Block'):
             if key in self.__blocks:
                 self.__blocks[key].append(block)
             else:
                 self.__blocks[key] = [block]
-            self.__update_view()
+            self.update_view()
 
-        def __update_view(self):
+        def update_view(self, *args, **kwargs):
             if self.__filt_val is None:
-                self.view = self.__sep.join([self.__sep.join(map(lambda b: repr(b), bs)) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0])])
+                self.view = self.__sep.join([self.__sep.join(map(lambda b: repr(b), bs)) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0], reverse=self.__reverse)])
             else:
-                self.view = self.__sep.join(filter(None, [self.__sep.join(filter(None, map(lambda b: repr(b) if getattr(b.obj, self.__filt_attr) < self.__filt_val else '', bs))) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0])]))
+                self.view = self.__sep.join(filter(None, [self.__sep.join(filter(None, map(lambda b: repr(b) if getattr(b.obj, self.__filt_attr) < self.__filt_val else '', bs))) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0], reverse=self.__reverse)]))
 
     class _HWsList(_Container):
-        def __init__(self, hws_blocks: Dict[int, List['Page._Block']]):
-            super().__init__('<hr />\n')
+        def __init__(self, hws_blocks: Dict[int, List['Page._Block']], *args, **kwargs):
+            super().__init__('<hr />\n', *args, **kwargs)
             self.__hws_blocks = hws_blocks
 
         def insert(self, key: Any, hw: HW, url: str):
@@ -435,8 +475,16 @@ class Page:
                 self.__hws_blocks[hw.id].append(block)
 
     class _Dialog(_Container):
-        def __init__(self):
-            super().__init__('<br>\n')
+        def __init__(self, *args, **kwargs):
+            super().__init__('<br>\n', *args, **kwargs)
 
         def insert(self, key: Any, message: Message):
             self.insert_block(key, Page._Message(message))
+
+    class _Results(_Container):
+        def __init__(self, *args, **kwargs):
+            super().__init__('<hr />\n', *args, **kwargs)
+
+        def insert(self, key: Any, hw: HW, url: str, time: tm.struct_time):
+            block = Page._HWRes(hw, url, time)
+            self.insert_block(key, block)
