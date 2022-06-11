@@ -28,7 +28,7 @@ class Checker:
 
     def on_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
-            self.on_result(self.hw)
+            self.on_result(self.hw.id, int(body))
 
     def call(self, hw, solution_url, on_result):
         self.hw = hw

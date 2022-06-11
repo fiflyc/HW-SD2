@@ -1,6 +1,7 @@
 import time as tm
 from model import Model, HW, Message
 from view import View
+from controller.Checker import Checker
 
 
 class Controller:
@@ -9,8 +10,9 @@ class Controller:
     '''
 
     def __init__(self, model: Model, view: View):
-        self.__model = model
-        self.__view  = view
+        self.__model   = model
+        self.__view    = view
+        self.__checker = Checker()
 
     def send_solution(self, hw_id: int, url: str, text: str):
         '''
@@ -21,6 +23,7 @@ class Controller:
         message = Message(tm.localtime(), url, text)
         self.__model.send_message(hw_id, message)
         self.__view.on_message_send(hw_id, message)
+        self.__checker.call(self.__model.get_hw(hw_id), url, self.set_mark)
 
     def create_homework(self, *args, **kwargs):
         '''

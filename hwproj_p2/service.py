@@ -1,4 +1,5 @@
 from flask import Flask, request
+import os
 import time as tm
 from controller import Controller
 from model import Model
@@ -6,6 +7,8 @@ from view import View, UserType
 
 
 service = Flask('MyHWProj')
+# TODO мб под это отдельный скрипт:
+# os.system('controller/Runner.py')
 view = View()
 controller = Controller(Model(None), view)
 

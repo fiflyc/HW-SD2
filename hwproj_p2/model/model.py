@@ -130,6 +130,18 @@ class Model:
         except KeyError:
             raise KeyError(f'a homework with id {hw_id} does not exist') from None
 
+    def get_hw(self, hw_id: int) -> 'HW':
+        '''
+        :param hw_id: an id of a homework
+        :returns: a homework with such id
+        :throws KeyError: if a homework with such id does not exist
+        '''
+
+        try:
+            return self.__hws[hw_id]
+        except KeyError:
+            raise KeyError(f'a homework with id {hw_id} does not exist') from None
+
     def get_hws(self, date_filter: bool =False) -> Generator['HW', None, None]:
         '''
         :param date_filter: if True then the result will not include future homeworks
