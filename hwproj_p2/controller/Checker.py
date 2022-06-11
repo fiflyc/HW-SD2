@@ -24,12 +24,13 @@ class Checker:
         self.response = None
         self.corr_id = None
         self.hw = None
+        self.on_result = None
 
     def on_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
-            self.hw.updateMark(int(body))
+            self.on_result(self.hw)
 
-    def call(self, hw, solution_url):
+    def call(self, hw, solution_url, on_result):
         self.hw = hw
         self.corr_id = str(uuid.uuid4())
         self.channel.basic_publish(
