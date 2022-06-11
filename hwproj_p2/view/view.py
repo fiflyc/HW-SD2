@@ -38,6 +38,7 @@ class View:
             .add_line()
             .add_hws_list()
         )
+        self.__hw_creation_date = {}
         self.__hw_student_pages = {}
         self.__hw_teacher_pages = {}
         self.__res_student_page = (
@@ -70,6 +71,16 @@ class View:
             .add_file_input("hw_script", "Bash скрипт проверки", ["sh"])
             .add_button_post("Создать", "http://localhost:8888/teacher", ["hw_name", "hw_problem", "hw_start", "hw_end"], ["hw_script"])
         )
+        self.__invalid_hw_teacher_page = (
+            Page("http://localhost:8888/teacher/homework/err")
+            .add_heading(1, "Нет такого задания")
+            .add_panel([("http://localhost:8888/teacher", "Все задания")])
+        )
+        self.__invalid_hw_student_page = (
+            Page("http://localhost:8888/student/homework/err")
+            .add_heading(1, "Нет такого задания")
+            .add_panel([("http://localhost:8888/student", "Все задания")])
+        )
 
     def get_homeworks_page(self, user: UserType) -> str:
         '''
@@ -90,16 +101,21 @@ class View:
         :param hw_id: an id of a homework
         :param user: a type of an user who looks the page
         :returns: HTML code of the web page
-        :throws KeyError: if a web page of a homework with such id does not exist
         '''
 
         try:
             if user == UserType.STUDENT:
-                return repr(self.__hw_student_pages[hw_id])
+                if self.__hw_creation_date[hw_id] > tm.localtime():
+                    return repr(self.__invalid_hw_student_page)
+                else:
+                    return repr(self.__hw_student_pages[hw_id])
             elif user == UserType.TEACHER:
                 return repr(self.__hw_teacher_pages[hw_id])
         except KeyError:
-            raise KeyError(f'a web page of a homework with id {hw_id} does not exist') from None
+            if user == UserType.STUDENT:
+                return repr(self.__invalid_hw_student_page)
+            elif user == UserType.TEACHER:
+                return repr(self.__invalid_hw_teacher_page)
 
     def get_results_page(self, user: UserType) -> str:
         '''
@@ -130,6 +146,7 @@ class View:
         url_student = f"http://localhost:8888/student/homework/{hw.id}"
         url_teacher = f"http://localhost:8888/teacher/homework/{hw.id}"
 
+        self.__hw_creation_date[hw.id] = hw.date
         self.__hws_student_page.insert_to(0, hw.deadline, hw, url_student)
         self.__hws_teacher_page.insert_to(0, hw.deadline, hw, url_teacher)
         self.__hw_student_pages[hw.id] = (
