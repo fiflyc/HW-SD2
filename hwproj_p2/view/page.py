@@ -12,7 +12,7 @@ class Page:
     Supported blocks:
         heading:     HTML tag <h*> where * in [1, 6]
         panel:       HTML borderless table with one row that contains links to some pages
-        line:        HTML tag <hr />
+        line:        HTML tag <hr>
         break:       HTML tag <br>
         hw_res:      HTML code of the student's attempt result
         hw_short:    HTML code of a short homework description (name, deadline, mark)
@@ -268,7 +268,7 @@ class Page:
     class _Line(_Block):
         def __init__(self):
             super().__init__()
-            self.view = '<hr />\n'
+            self.view = '<hr>\n'
 
     class _Break(_Block):
         def __init__(self):
@@ -312,7 +312,7 @@ class Page:
                 f'<h3><a href="{self.__url}">{hw.name}</a></h3>\n'
                 f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
             )
-            self.view += '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
+            self.view += '<p><strong>Нет проверенных решений</strong></p>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
             
     class _HWLong(_Block):
         def __init__(self, hw: HW):
@@ -328,7 +328,7 @@ class Page:
                 f'<p><strong>Опубликовано:</strong> {date_str}</p>\n'
                 f'<p><strong>Дедлайн:</strong> {deadline_str}</p>\n'
             )
-            self.view += '<p><strong>Нет проверенных решений</p></strong>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
+            self.view += '<p><strong>Нет проверенных решений</strong></p>\n' if hw.mark is None else f'<p><strong>Оценка:</strong> {hw.mark}</p>\n'
 
     class _Message(_Block):
         def __init__(self, message: Message):
@@ -463,11 +463,11 @@ class Page:
             if self.__filt_val is None:
                 self.view = self.__sep.join([self.__sep.join(map(lambda b: repr(b), bs)) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0], reverse=self.__reverse)])
             else:
-                self.view = self.__sep.join(filter(None, [self.__sep.join(filter(None, map(lambda b: repr(b) if getattr(b.obj, self.__filt_attr) < self.__filt_val else '', bs))) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0], reverse=self.__reverse)]))
+                self.view = self.__sep.join(filter(None, [self.__sep.join(filter(None, map(lambda b: repr(b) if getattr(b.obj, self.__filt_attr) <= self.__filt_val else '', bs))) for _, bs in sorted(self.__blocks.items(), key=lambda item: item[0], reverse=self.__reverse)]))
 
     class _HWsList(_Container):
         def __init__(self, hws_blocks: Dict[int, List['Page._Block']], *args, **kwargs):
-            super().__init__('<hr />\n', *args, **kwargs)
+            super().__init__('<hr>\n', *args, **kwargs)
             self.__hws_blocks = hws_blocks
 
         def insert(self, key: Any, hw: HW, url: str):
@@ -487,7 +487,7 @@ class Page:
 
     class _Results(_Container):
         def __init__(self, *args, **kwargs):
-            super().__init__('<hr />\n', *args, **kwargs)
+            super().__init__('<hr>\n', *args, **kwargs)
 
         def insert(self, key: Any, hw: HW, url: str, time: tm.struct_time):
             block = Page._HWRes(hw, url, time)

@@ -1,0 +1,69 @@
+<h1>Новое задание</h1>
+
+<table style="border-collapse: collapse; width: 100%; max-width: 600px;" border="0"><tbody>
+	<tr>
+		<td style="width: 50%;"><a href="http://localhost:8888/teacher">Все задания</a></td>
+		<td style="width: 50%;"><a href="http://localhost:8888/teacher/results">Успеваемость</a></td>
+	</tr>
+</tbody></table>
+
+<hr>
+
+<p>Название работы:</p>
+<p><textarea rows="1" cols="75" class="hw_name" style="resize: vertical"></textarea></p>
+
+<p>Условие:</p>
+<p><textarea rows="24" cols="75" class="hw_problem" style="resize: vertical"></textarea></p>
+
+<p><label for="hw_start" style="padding-right: 20px;">Начало:</label>
+<input type="datetime-local" class="hw_start" min="2022-06-12T15:29"></p>
+
+<p><label for="hw_end" style="padding-right: 20px;">Дедлайн:</label>
+<input type="datetime-local" class="hw_end" min="2022-06-12T15:29"></p>
+
+<script type="text/javascript">
+	var hw_script = null;
+	var hw_script_loading = false;
+	function onloadf0() {
+		hw_script = null;
+		if (!document.querySelector(".hw_script").files[0]) {
+			return;
+		}
+		hw_script_loading = true;
+		const reader = new FileReader();
+		reader.readAsText(document.querySelector(".hw_script").files[0]);
+		reader.onload = () => {
+			hw_script = reader.result;
+			hw_script_loading = false;
+		};
+	}
+</script><p><label for="hw_script" style="padding-right:20px;">Bash скрипт проверки:</label>
+<input type="file" class="hw_script" onchange="onloadf0()" accept=".sh"></p>
+
+<script type="text/javascript">
+	function send0() {
+		var hw_name = document.querySelector(".hw_name").value;
+		var hw_problem = document.querySelector(".hw_problem").value;
+		var hw_start = document.querySelector(".hw_start").value;
+		var hw_end = document.querySelector(".hw_end").value;
+		if (hw_script == null) {
+			if (hw_script_loading) {
+				alert("Файл загружается");
+				return;
+			} else {
+				alert("Файл не выбран");
+				return;
+			}
+		}
+		if (hw_name.length > 0 && hw_problem.length > 0 && hw_start.length > 0 && hw_end.length > 0) {
+			let xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8888/teacher/add", true);
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.send(JSON.stringify({ "hw_name": hw_name, "hw_problem": hw_problem, "hw_start": hw_start, "hw_end": hw_end, "hw_script": hw_script }));
+			window.location.href = "http://localhost:8888/teacher";
+		} else {
+			alert("Заполните все поля");
+		}
+	}
+</script>
+<button onclick="send0()">Создать</button>
