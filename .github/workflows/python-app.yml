@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -r hw_proj_p2/requirements.txt
+        python -m pip install -r hwproj_p2/requirements.txt
     - name: Test with pytest
       run: |
-        bash hw_proj_p2/run_tests.sh
+        bash hwproj_p2/run_tests.sh
