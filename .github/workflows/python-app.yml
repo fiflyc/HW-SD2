@@ -26,6 +26,7 @@ jobs:
         python-version: "3.8"
     - name: Install dependencies
       run: |
+        cd hw_proj_p2
         python -m pip install --upgrade pip
         python -m pip install -r requirements.txt
     - name: Test with pytest
