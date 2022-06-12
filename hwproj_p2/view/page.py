@@ -335,7 +335,11 @@ class Page:
             super().__init__(message)
 
             time_str = tm.strftime('%d.%m.%Y %H:%M', message.time)
-            if not message.url.startswith('//'):
+            if message.url.startswith('http://'):
+                url = message.url[5:]
+            elif message.url.startswith('https://'):
+                url = message.url[6:]
+            elif not message.url.startswith('//'):
                 url = '//' + message.url
             else:
                 url = message.url

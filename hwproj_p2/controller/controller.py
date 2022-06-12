@@ -44,3 +44,4 @@ class Controller:
 
         hw = self.__model.set_mark(hw_id, mark)
         self.__view.on_mark_updated(hw, tm.localtime())
+        self.send_solution(hw_id, '', f'Работа проверена.\nОценка: {mark}')
