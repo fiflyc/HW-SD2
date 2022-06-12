@@ -26,8 +26,10 @@ jobs:
         python-version: "3.8"
     - name: Install dependencies
       run: |
+        cd hwproj_p2
         python -m pip install --upgrade pip
-        python -m pip install -r hwproj_p2/requirements.txt
+        python -m pip install -r requirements.txt
     - name: Test with pytest
       run: |
-        bash hwproj_p2/run_tests.sh
+        cd hwproj_p2
+        bash run_tests.sh
