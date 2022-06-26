@@ -1,0 +1,4 @@
+pytest
+quart
+pika
+aio-pika

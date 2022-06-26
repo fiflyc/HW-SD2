@@ -1,0 +1,55 @@
+<h1>Сдать решение</h1>
+
+<table style="border-collapse: collapse; width: 100%; max-width: 600px;" border="0"><tbody>
+	<tr>
+		<td style="width: 50%;"><a href="http://localhost:8888/student">Все задания</a></td>
+		<td style="width: 50%;"><a href="http://localhost:8888/student/results">Успеваемость</a></td>
+	</tr>
+</tbody></table>
+
+<hr>
+
+<h2>NAME-00</h2>
+<p style="width: 800px; word-wrap: break-word; white-space: pre-line;">PROBLEM-00</p>
+<p><strong>Опубликовано:</strong> 12.06.2022 17:14</p>
+<p><strong>Дедлайн:</strong> 12.06.2022 17:14</p>
+<p><strong>Нет проверенных решений</strong></p>
+
+<hr>
+
+<br>
+
+<table style="border-collapse: collapse; background-color: #d9d9d9;" border="0"><tbody>
+	<tr><td style="width: 100%;"><blockquote>
+		<p><a href="//github.com">github.com</a></p>
+		<p style="width: 500px; word-wrap: break-word; white-space: pre-line;">comment-00-00</p>
+		<p style="text-align: right;"><em>12.06.2022 17:15</em></p>
+	</blockquote></td></tr>
+</tbody></table>
+
+<br>
+
+<hr>
+
+<p>Ссылка на решение:</p>
+<p><textarea rows="1" cols="75" class="m_url" style="resize: vertical"></textarea></p>
+
+<p>Комментарий:</p>
+<p><textarea rows="12" cols="75" class="m_text" style="resize: vertical"></textarea></p>
+
+<script type="text/javascript">
+	function send0() {
+		var m_url = document.querySelector(".m_url").value;
+		var m_text = document.querySelector(".m_text").value;
+		if (m_url.length > 0 && m_text.length > 0) {
+			let xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8888/student/homework/0", true);
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.send(JSON.stringify({ "m_url": m_url, "m_text": m_text,  }));
+			window.location.href = "http://localhost:8888/student/homework/0";
+		} else {
+			alert("Заполните все поля");
+		}
+	}
+</script>
+<button onclick="send0()">Отправить</button>
