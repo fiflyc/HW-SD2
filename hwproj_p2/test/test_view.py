@@ -28,7 +28,7 @@ HTMLs = {
 
 @pytest.fixture(scope='module', autouse=True)
 def my_fixture():
-    prefix = './test/html/'
+    prefix = 'hwproj_p2/test/html/'
     suffix = '.html'
     for page in HTMLs:
         with open(prefix + page.lower() + suffix, 'r') as file:
