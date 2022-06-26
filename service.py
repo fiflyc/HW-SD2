@@ -65,7 +65,7 @@ async def add_homework_teacher():
 async def startup():
     global view, checker, controller
     view = View()
-    checker = await Checker().connect()
+    checker = await Checker.create_checker()
     controller = Controller(Model(None), view, checker)
 
 

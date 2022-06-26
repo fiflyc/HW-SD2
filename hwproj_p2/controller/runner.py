@@ -7,7 +7,13 @@ from aio_pika import connect_robust
 from aio_pika.patterns import RPC
 
 
-def check_solution(solution_url, checker_script):
+def check_solution(solution_url: str, checker_script: str) -> int:
+    """
+    Checks the homework
+    :param solution_url:
+    :param checker_script:
+    :return: result
+    """
     id = str(uuid.uuid4())
     os.mkdir(f'./tmp_solution_{id}')
     os.chdir(f'./tmp_solution_{id}')
