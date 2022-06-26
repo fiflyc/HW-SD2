@@ -1,5 +1,5 @@
 import time as tm
-from model import HW, Message
+from hwproj_p2.model import HW, Message
 from typing import List, Tuple, Dict, Optional, Union, Any
 
 

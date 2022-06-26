@@ -1,7 +1,7 @@
 import time as tm
 from enum import Enum
-from view.page import Page
-from model import HW, Message
+from hwproj_p2.view.page import Page
+from hwproj_p2.model import HW, Message
 
 
 class UserType(Enum):

@@ -1,2 +1,1 @@
-from view.view import View, UserType
-from view.page import Page
+from hwproj_p2.view.view import View, UserType, Page

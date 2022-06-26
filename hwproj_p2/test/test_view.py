@@ -1,8 +1,8 @@
 import pytest
 import re
 import time as tm
-from view import View, UserType
-from model import HW, Message
+from hwproj_p2.view import View, UserType
+from hwproj_p2.model import HW, Message
 
 
 HTMLs = {

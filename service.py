@@ -1,55 +1,56 @@
-from flask import Flask, request
-import os
+import asyncio
+from quart import Quart, request
 import time as tm
-from controller import Controller
-from model import Model
-from view import View, UserType
+from hwproj_p2.controller import Controller
+from hwproj_p2.controller.checker import Checker
+from hwproj_p2.model import Model
+from hwproj_p2.view import View, UserType
 
-
-service = Flask('MyHWProj')
-# TODO мб под это отдельный скрипт:
-# os.system('controller/Runner.py')
-view = View()
-controller = Controller(Model(None), view)
+service = Quart('MyHWProj')
+view: View = None
+checker: Checker = None
+controller: Controller = None
 
 
 @service.route('/student')
 def get_homeworks_list_student():
     return view.get_homeworks_page(UserType.STUDENT)
 
+
 @service.route('/teacher')
 def get_homeworks_list_teacher():
     return view.get_homeworks_page(UserType.TEACHER)
 
+
 @service.route('/student/homework/<int:hw_id>', methods=['GET', 'POST'])
-def send_solution_student(hw_id):
+async def send_solution_student(hw_id):
     if request.method == 'POST':
-        data = request.json
-        controller.send_solution(
-            hw_id,
-            data['m_url'],
-            data['m_text']
-        )
+        data = await request.json
+        service.add_background_task(controller.send_solution, hw_id, data['m_url'], data['m_text'])
     return view.get_task_page(hw_id, UserType.STUDENT)
+
 
 @service.route('/teacher/homework/<int:hw_id>')
 def get_homework_teacher(hw_id):
     return view.get_task_page(hw_id, UserType.TEACHER)
 
+
 @service.route('/student/results')
 def get_results_list_student():
     return view.get_results_page(UserType.STUDENT)
+
 
 @service.route('/teacher/results')
 def get_results_list_teacher():
     return view.get_results_page(UserType.TEACHER)
 
+
 @service.route('/teacher/add', methods=['GET', 'POST'])
-def add_homework_teacher():
+async def add_homework_teacher():
     if request.method == 'GET':
         return view.get_hw_creation_page()
     else:
-        data = request.json
+        data = await request.json
         controller.create_homework(
             data['hw_name'],
             data['hw_problem'],
@@ -58,6 +59,14 @@ def add_homework_teacher():
             data["hw_script"]
         )
         return view.get_homeworks_page(UserType.TEACHER)
+
+
+@service.before_serving
+async def startup():
+    global view, checker, controller
+    view = View()
+    checker = await Checker().connect()
+    controller = Controller(Model(None), view, checker)
 
 
 if __name__ == '__main__':

@@ -1,1 +1,1 @@
-from controller.controller import Controller
+from hwproj_p2.controller.controller import Controller
